@@ -332,7 +332,7 @@ void PairYLZ::write_restart(FILE *fp)
         fwrite(&epsilon[i][j], sizeof(double), 1, fp);
         fwrite(&sigma[i][j], sizeof(double), 1, fp);
         fwrite(&cut[i][j], sizeof(double), 1, fp);
-        fwrite(&eta[i][j], sizeof(double), 1, fp);
+        fwrite(&eta[i][j], sizeof(int), 1, fp);  
         fwrite(&mu[i][j], sizeof(double), 1, fp);
         fwrite(&beta[i][j], sizeof(double), 1, fp);
         fwrite(&osmotic_pressure[i][j], sizeof(double), 1, fp);
@@ -359,7 +359,7 @@ void PairYLZ::read_restart(FILE *fp)
           utils::sfread(FLERR, &epsilon[i][j], sizeof(double), 1, fp, nullptr, error);
           utils::sfread(FLERR, &sigma[i][j], sizeof(double), 1, fp, nullptr, error);
           utils::sfread(FLERR, &cut[i][j], sizeof(double), 1, fp, nullptr, error);
-          utils::sfread(FLERR, &eta[i][j], sizeof(double), 1, fp, nullptr, error);
+          utils::sfread(FLERR, &eta[i][j], sizeof(int), 1, fp, nullptr, error);  
           utils::sfread(FLERR, &mu[i][j], sizeof(double), 1, fp, nullptr, error);
           utils::sfread(FLERR, &beta[i][j], sizeof(double), 1, fp, nullptr, error);
           utils::sfread(FLERR, &osmotic_pressure[i][j], sizeof(double), 1, fp, nullptr, error);
@@ -368,7 +368,7 @@ void PairYLZ::read_restart(FILE *fp)
         MPI_Bcast(&epsilon[i][j], 1, MPI_DOUBLE, 0, world);
         MPI_Bcast(&sigma[i][j], 1, MPI_DOUBLE, 0, world);
         MPI_Bcast(&cut[i][j], 1, MPI_DOUBLE, 0, world);
-        MPI_Bcast(&eta[i][j], 1, MPI_DOUBLE, 0, world);
+        MPI_Bcast(&eta[i][j], 1, MPI_INT, 0, world); 
         MPI_Bcast(&mu[i][j], 1, MPI_DOUBLE, 0, world);
         MPI_Bcast(&beta[i][j], 1, MPI_DOUBLE, 0, world);
         MPI_Bcast(&osmotic_pressure[i][j], 1, MPI_DOUBLE, 0, world);
@@ -450,11 +450,11 @@ double PairYLZ::ylz_analytic(const int i, const int j, double a1[3][3], double a
 
   double ni1[3], nj1[3], dphi_drhat[3], dUdrhat[3], dUdni1[3], dUdnj1[3];
   double dphi_dni1[3], dphi_dnj1[3];
-  double t, t1, t2, t4, cos_t, U, uR, uA, dUdr, dUdphi;
+  double t, cos_t, U, uR, uA, dUdr, dUdphi;
   const double energy_well = epsilon[type[i]][type[j]];
   const double rmin = MY_TWOBYSIXTH * sigma[type[i]][type[j]];
   const double rcut = cut[type[i]][type[j]];
-  const double zt = eta[type[i]][type[j]];
+  const int zt = eta[type[i]][type[j]]; 
   const double muu = mu[type[i]][type[j]];
   const double sint = beta[type[i]][type[j]];
 
@@ -466,61 +466,7 @@ double PairYLZ::ylz_analytic(const int i, const int j, double a1[3][3], double a
   nj1[0] = a2[0][0];
   nj1[1] = a2[0][1];
   nj1[2] = a2[0][2];
-//*before 8-4
-/*
-  const double ninj = MathExtra::dot3(ni1, nj1);
-  const double ni1rhat = MathExtra::dot3(ni1, r12hat);
-  const double nj1rhat = MathExtra::dot3(nj1, r12hat);
 
-  const double a = ninj + (sint - ni1rhat) * (sint + nj1rhat) - 2.0 * sint * sint;
-  const double phi = 1.0 + (a - 1.0) * muu;
-
-  dphi_drhat[0] = muu * ((sint - ni1rhat) * nj1[0] - ni1[0] * (sint + nj1rhat));
-  dphi_drhat[1] = muu * ((sint - ni1rhat) * nj1[1] - ni1[1] * (sint + nj1rhat));
-  dphi_drhat[2] = muu * ((sint - ni1rhat) * nj1[2] - ni1[2] * (sint + nj1rhat));
-
-  dphi_dni1[0] = muu * (nj1[0] - r12hat[0] * (sint + nj1rhat));
-  dphi_dni1[1] = muu * (nj1[1] - r12hat[1] * (sint + nj1rhat));
-  dphi_dni1[2] = muu * (nj1[2] - r12hat[2] * (sint + nj1rhat));
-
-  dphi_dnj1[0] = muu * (ni1[0] + r12hat[0] * (sint - ni1rhat));
-  dphi_dnj1[1] = muu * (ni1[1] + r12hat[1] * (sint - ni1rhat));
-  dphi_dnj1[2] = muu * (ni1[2] + r12hat[2] * (sint - ni1rhat));
-
-  if (r < rmin) {
-    t = rmin / r;
-    t2 = t * t;
-    t4 = t2 * t2;
-    uR = (t4 - 2.0 * t2) * energy_well;
-    U = uR + (1.0 - phi) * energy_well;
-    dUdr = 4.0 * (t2 - t4) / r * energy_well;
-    dUdphi = -energy_well;
-  } else {
-    t = MY_PI2 * (r - rmin) / (rcut - rmin);
-    cos_t = cos(t);
-    t1 = cos_t;
-
-    for (int k = 1; k <= 2 * zt - 2; k++) t1 *= cos_t;    // get cos()^(2zt-1)
-
-    uA = -energy_well * t1 * cos_t;
-    U = uA * phi;
-    dUdr = MY_4PI / (rcut - rmin) * (t1) *sin(t) * phi * energy_well;
-    dUdphi = uA;
-  }
-
-  dUdrhat[0] = dUdphi * dphi_drhat[0];
-  dUdrhat[1] = dUdphi * dphi_drhat[1];
-  dUdrhat[2] = dUdphi * dphi_drhat[2];
-
-  double dUdrhatrhat = MathExtra::dot3(dUdrhat, r12hat);
-
-  fforce[0] = dUdr * r12hat[0] + (dUdrhat[0] - dUdrhatrhat * r12hat[0]) / r;
-  fforce[1] = dUdr * r12hat[1] + (dUdrhat[1] - dUdrhatrhat * r12hat[1]) / r;
-  fforce[2] = dUdr * r12hat[2] + (dUdrhat[2] - dUdrhatrhat * r12hat[2]) / r;
-
-//before 8-4
-*/
-// for new potential 2024-08-04
   const double ninj = MathExtra::dot3(ni1, nj1);
   const double ni1rhat = MathExtra::dot3(ni1, r12hat);
   const double nj1rhat = MathExtra::dot3(nj1, r12hat);
@@ -547,28 +493,38 @@ double PairYLZ::ylz_analytic(const int i, const int j, double a1[3][3], double a
   dphi_dnj1[2] = ne_epsi_mu * (ni1[2] + r12hat[2] * sint_minus_ni1rhat);
 
 
-  const double ddd = 1.25*rmin;
+  const double ddd = 1.25*rmin;   //定义成可输入参数
   double u_d, uu;
 
-
+/*
   if (r < ddd) {
 
     t = rmin / r;
-    t2 = t * t;
-    t4 = t2 * t2;
+  
+    //waiting for change
+    //t2 = t * t;
+    //t4 = t2 * t2;
+    //uu = (t4 - 2.0 * t2) * energy_well;
+    
 
-    uu = (t4 - 2.0 * t2) * energy_well;
+    uu = ([&]() 
+      { double result = 1.0; 
+        for (int i = 0; i < zt; ++i) result *= t; 
+        return (result - 2.0 * sqrt(result)); 
+      }()) * energy_well;
+
+
     U = uu + phi;
 
-    dUdr = 4.0 * (t2 - t4) / r * energy_well;
+    dUdr = 4.0 * (pow(t, zt) - pow(t, 2*zt)) / r * energy_well;
     dUdphi = 1.0; } 
   else {
 
     // computing u(ddd), which is a constant
     t = rmin / ddd;
-    t2 = t * t;
-    t4 = t2 * t2;
-    u_d = (t4 - 2.0 * t2) * energy_well;
+    //t2 = t * t;
+    //t4 = t2 * t2;
+    u_d = (pow(t, 2*zt) - 2.0 * pow(t, zt)) * energy_well;//这样计算量太大了，用for循环
 
     double temp_var_110 = (u_d + phi) / (rcut - ddd) ;
 
@@ -589,7 +545,7 @@ double PairYLZ::ylz_analytic(const int i, const int j, double a1[3][3], double a
   fforce[1] = dUdr * r12hat[1] + (dUdrhat[1] - dUdrhatrhat * r12hat[1]) / r;
   fforce[2] = dUdr * r12hat[2] + (dUdrhat[2] - dUdrhatrhat * r12hat[2]) / r;
   
-  
+  */
   
   //--------------8-4  for new potential 2024-08-04
   //
