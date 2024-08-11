@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------
    LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
    https://www.lammps.org/, Sandia National Laboratories
-   LAMMPS Development team: developers@lammps.org
+   LAMMPS development team: developers@lammps.org
 
    Copyright (2003) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
@@ -12,7 +12,7 @@
 ------------------------------------------------------------------------- */
 
 /* ----------------------------------------------------------------------
-   Contributing author: Hongyan Yuan (SUSTech)
+   Contributing authors: Hongyan Yuan (SUSTech), Zhaoyan Huang(SUSTech)
 ------------------------------------------------------------------------- */
 
 #include "pair_ylz.h"
@@ -110,6 +110,7 @@ void PairYLZ::compute(int eflag, int vflag)
   firstneigh = list->firstneigh;
 
   // loop over neighbors of my atoms  
+
   int flag = 0;
   for (ii = 0; ii < inum; ii++) {
     i = ilist[ii];
@@ -413,8 +414,8 @@ void PairYLZ::read_restart_settings(FILE *fp)
 void PairYLZ::write_data(FILE *fp)
 {
   for (int i = 1; i <= atom->ntypes; i++)
-    fprintf(fp, "%d %g %g %g %g %g %g %g\n", i, epsilon[i][i], sigma[i][i], cut[i][i], zeta[i][i],
-            mu[i][i], beta[i][i], lambda[i][i]);
+    fprintf(fp, "%d %g %g %g %g %g %g\n", i, epsilon[i][i], sigma[i][i], cut[i][i], zeta[i][i],
+            mu[i][i], beta[i][i]);
 }
 
 /* ----------------------------------------------------------------------
@@ -425,8 +426,8 @@ void PairYLZ::write_data_all(FILE *fp)
 {
   for (int i = 1; i <= atom->ntypes; i++)
     for (int j = i; j <= atom->ntypes; j++)
-      fprintf(fp, "%d %d %g %g %g %g %g %g %g\n", i, j, epsilon[i][i], sigma[i][i], cut[i][j],
-              zeta[i][j], mu[i][j], beta[i][j], lambda[i][j]);
+      fprintf(fp, "%d %d %g %g %g %g %g %g\n", i, j, epsilon[i][j], sigma[i][j], cut[i][j],
+              zeta[i][j], mu[i][j], beta[i][j]);
 }
 
 /* ----------------------------------------------------------------------
