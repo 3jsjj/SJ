@@ -414,8 +414,8 @@ void PairYLZ::read_restart_settings(FILE *fp)
 void PairYLZ::write_data(FILE *fp)
 {
   for (int i = 1; i <= atom->ntypes; i++)
-    fprintf(fp, "%d %g %g %g %g %g %g\n", i, epsilon[i][i], sigma[i][i], cut[i][i], zeta[i][i],
-            mu[i][i], beta[i][i]);
+    fprintf(fp, "%d %g %g %g %g %g %g %g\n", i, epsilon[i][i], sigma[i][i], cut[i][i], zeta[i][i],
+            mu[i][i], beta[i][i], lambda[i][i]);
 }
 
 /* ----------------------------------------------------------------------
@@ -426,8 +426,8 @@ void PairYLZ::write_data_all(FILE *fp)
 {
   for (int i = 1; i <= atom->ntypes; i++)
     for (int j = i; j <= atom->ntypes; j++)
-      fprintf(fp, "%d %d %g %g %g %g %g %g\n", i, j, epsilon[i][j], sigma[i][j], cut[i][j],
-              zeta[i][j], mu[i][j], beta[i][j]);
+      fprintf(fp, "%d %d %g %g %g %g %g %g %g\n", i, j, epsilon[i][j], sigma[i][j], cut[i][j],
+              zeta[i][j], mu[i][j], beta[i][j], lambda[i][j]);
 }
 
 /* ----------------------------------------------------------------------
