@@ -52,7 +52,7 @@ static const char cite_pair_ylz[] =
 
 PairYLZ::PairYLZ(LAMMPS *lmp) :
     Pair(lmp), epsilon(nullptr), sigma(nullptr), cut(nullptr), zeta(nullptr), mu(nullptr),
-    beta(nullptr), lambda(nullptr), avec(nullptr)
+    beta(nullptr), osmotic_pressure(nullptr), avec(nullptr)
 {
   if (lmp->citeme) lmp->citeme->add(cite_pair_ylz);
 
@@ -76,7 +76,7 @@ PairYLZ::~PairYLZ()
     memory->destroy(zeta);
     memory->destroy(mu);
     memory->destroy(beta);
-    memory->destroy(lambda);
+    memory->destroy(osmotic_pressure);
   }
 }
 
@@ -191,11 +191,11 @@ void PairYLZ::compute(int eflag, int vflag)
       }
     }
 
-//add pressure, we will check double counting latter
+//add osmotic_pressure 
 
-    f[i][0] -= lambda[1][1] * a1[0][0];
-    f[i][1] -= lambda[1][1] * a1[0][1];
-    f[i][2] -= lambda[1][1] * a1[0][2];
+    f[i][0] -= osmotic_pressure[1][1] * a1[0][0];
+    f[i][1] -= osmotic_pressure[1][1] * a1[0][1];
+    f[i][2] -= osmotic_pressure[1][1] * a1[0][2];
     //printf("%d\n",jj);
     //std:ofstream logfile("log1.txt");
 //it is bot printf f ,it is particle ID should be printf
@@ -230,7 +230,7 @@ void PairYLZ::allocate()
   memory->create(zeta, np1, np1, "pair:zeta");
   memory->create(mu, np1, np1, "pair:mu");
   memory->create(beta, np1, np1, "pair:beta");
-  memory->create(lambda, np1, np1, "pair:lambda");
+  memory->create(osmotic_pressure, np1, np1, "pair:osmotic_pressure");
 }
 
 /* ----------------------------------------------------------------------
@@ -263,7 +263,7 @@ void PairYLZ::coeff(int narg, char **arg)
   double mu_one = utils::numeric(FLERR, arg[5], false, lmp);
   double beta_one = utils::numeric(FLERR, arg[6], false, lmp);
   double cut_one = utils::numeric(FLERR, arg[7], false, lmp);
-  double lambda_one = utils::numeric(FLERR, arg[8], false, lmp);
+  double osmotic_pressure_one = utils::numeric(FLERR, arg[8], false, lmp);
 
   int count = 0;
   for (int i = ilo; i <= ihi; i++) {
@@ -274,7 +274,7 @@ void PairYLZ::coeff(int narg, char **arg)
       zeta[i][j] = zeta_one;
       mu[i][j] = mu_one;
       beta[i][j] = beta_one;
-      lambda[i][j] = lambda_one;
+      osmotic_pressure[i][j] = osmotic_pressure_one;
 
       setflag[i][j] = 1;
       count++;
@@ -313,7 +313,7 @@ double PairYLZ::init_one(int i, int j)
   zeta[j][i] = zeta[i][j];
   mu[j][i] = mu[i][j];
   beta[j][i] = beta[i][j];
-  lambda[j][i] = lambda[i][j];
+  osmotic_pressure[j][i] = osmotic_pressure[i][j];
 
   return cut[i][j];
 }
@@ -336,7 +336,7 @@ void PairYLZ::write_restart(FILE *fp)
         fwrite(&zeta[i][j], sizeof(double), 1, fp);
         fwrite(&mu[i][j], sizeof(double), 1, fp);
         fwrite(&beta[i][j], sizeof(double), 1, fp);
-        fwrite(&lambda[i][j], sizeof(double), 1, fp);
+        fwrite(&osmotic_pressure[i][j], sizeof(double), 1, fp);
       }
     }
   }
@@ -363,7 +363,7 @@ void PairYLZ::read_restart(FILE *fp)
           utils::sfread(FLERR, &zeta[i][j], sizeof(double), 1, fp, nullptr, error);
           utils::sfread(FLERR, &mu[i][j], sizeof(double), 1, fp, nullptr, error);
           utils::sfread(FLERR, &beta[i][j], sizeof(double), 1, fp, nullptr, error);
-          utils::sfread(FLERR, &lambda[i][j], sizeof(double), 1, fp, nullptr, error);
+          utils::sfread(FLERR, &osmotic_pressure[i][j], sizeof(double), 1, fp, nullptr, error);
         }
 
         MPI_Bcast(&epsilon[i][j], 1, MPI_DOUBLE, 0, world);
@@ -372,7 +372,7 @@ void PairYLZ::read_restart(FILE *fp)
         MPI_Bcast(&zeta[i][j], 1, MPI_DOUBLE, 0, world);
         MPI_Bcast(&mu[i][j], 1, MPI_DOUBLE, 0, world);
         MPI_Bcast(&beta[i][j], 1, MPI_DOUBLE, 0, world);
-        MPI_Bcast(&lambda[i][j], 1, MPI_DOUBLE, 0, world);
+        MPI_Bcast(&osmotic_pressure[i][j], 1, MPI_DOUBLE, 0, world);
       }
     }
   }
@@ -415,7 +415,7 @@ void PairYLZ::write_data(FILE *fp)
 {
   for (int i = 1; i <= atom->ntypes; i++)
     fprintf(fp, "%d %g %g %g %g %g %g %g\n", i, epsilon[i][i], sigma[i][i], cut[i][i], zeta[i][i],
-            mu[i][i], beta[i][i], lambda[i][i]);
+            mu[i][i], beta[i][i], osmotic_pressure[i][i]);
 }
 
 /* ----------------------------------------------------------------------
@@ -427,7 +427,7 @@ void PairYLZ::write_data_all(FILE *fp)
   for (int i = 1; i <= atom->ntypes; i++)
     for (int j = i; j <= atom->ntypes; j++)
       fprintf(fp, "%d %d %g %g %g %g %g %g %g\n", i, j, epsilon[i][j], sigma[i][j], cut[i][j],
-              zeta[i][j], mu[i][j], beta[i][j], lambda[i][j]);
+              zeta[i][j], mu[i][j], beta[i][j], osmotic_pressure[i][j]);
 }
 
 /* ----------------------------------------------------------------------
@@ -615,6 +615,6 @@ double PairYLZ::ylz_analytic(const int i, const int j, double a1[3][3], double a
 void *PairYLZ::extract(const char *str, int &dim)
 {
   dim = 2;
-  if (strcmp(str,"lambda") == 0) return (void *) lambda;
+  if (strcmp(str,"osmotic_pressure") == 0) return (void *) osmotic_pressure;
   return nullptr;
 }
