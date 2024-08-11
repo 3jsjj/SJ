@@ -51,7 +51,7 @@ static const char cite_pair_ylz[] =
 /* ---------------------------------------------------------------------- */
 
 PairYLZ::PairYLZ(LAMMPS *lmp) :
-    Pair(lmp), epsilon(nullptr), sigma(nullptr), cut(nullptr), zeta(nullptr), mu(nullptr),
+    Pair(lmp), epsilon(nullptr), sigma(nullptr), cut(nullptr), eta(nullptr), mu(nullptr),
     beta(nullptr), osmotic_pressure(nullptr), avec(nullptr)
 {
   if (lmp->citeme) lmp->citeme->add(cite_pair_ylz);
@@ -73,7 +73,7 @@ PairYLZ::~PairYLZ()
     memory->destroy(epsilon);
     memory->destroy(sigma);
     memory->destroy(cut);
-    memory->destroy(zeta);
+    memory->destroy(eta);
     memory->destroy(mu);
     memory->destroy(beta);
     memory->destroy(osmotic_pressure);
@@ -125,6 +125,12 @@ void PairYLZ::compute(int eflag, int vflag)
 
     iquat = bonus[ellipsoid[i]].quat;
     MathExtra::quat_to_mat_trans(iquat, a1);
+
+//add osmotic_pressure 
+
+    f[i][0] -= osmotic_pressure[1][1] * a1[0][0];
+    f[i][1] -= osmotic_pressure[1][1] * a1[0][1];
+    f[i][2] -= osmotic_pressure[1][1] * a1[0][2];
 
     jlist = firstneigh[i];
     jnum = numneigh[i];
@@ -191,14 +197,7 @@ void PairYLZ::compute(int eflag, int vflag)
       }
     }
 
-//add osmotic_pressure 
 
-    f[i][0] -= osmotic_pressure[1][1] * a1[0][0];
-    f[i][1] -= osmotic_pressure[1][1] * a1[0][1];
-    f[i][2] -= osmotic_pressure[1][1] * a1[0][2];
-    //printf("%d\n",jj);
-    //std:ofstream logfile("log1.txt");
-//it is bot printf f ,it is particle ID should be printf
   }
 
   if (vflag_fdotr) virial_fdotr_compute();
@@ -227,7 +226,7 @@ void PairYLZ::allocate()
   memory->create(epsilon, np1, np1, "pair:epsilon");
   memory->create(sigma, np1, np1, "pair:sigma");
   memory->create(cut, np1, np1, "pair:cut");
-  memory->create(zeta, np1, np1, "pair:zeta");
+  memory->create(eta, np1, np1, "pair:eta");
   memory->create(mu, np1, np1, "pair:mu");
   memory->create(beta, np1, np1, "pair:beta");
   memory->create(osmotic_pressure, np1, np1, "pair:osmotic_pressure");
@@ -259,7 +258,7 @@ void PairYLZ::coeff(int narg, char **arg)
 
   double epsilon_one = utils::numeric(FLERR, arg[2], false, lmp);
   double sigma_one = utils::numeric(FLERR, arg[3], false, lmp);
-  double zeta_one = utils::numeric(FLERR, arg[4], false, lmp);
+  double eta_one = utils::numeric(FLERR, arg[4], false, lmp);
   double mu_one = utils::numeric(FLERR, arg[5], false, lmp);
   double beta_one = utils::numeric(FLERR, arg[6], false, lmp);
   double cut_one = utils::numeric(FLERR, arg[7], false, lmp);
@@ -271,7 +270,7 @@ void PairYLZ::coeff(int narg, char **arg)
       epsilon[i][j] = epsilon_one;
       sigma[i][j] = sigma_one;
       cut[i][j] = cut_one;
-      zeta[i][j] = zeta_one;
+      eta[i][j] = eta_one;
       mu[i][j] = mu_one;
       beta[i][j] = beta_one;
       osmotic_pressure[i][j] = osmotic_pressure_one;
@@ -310,7 +309,7 @@ double PairYLZ::init_one(int i, int j)
 
   epsilon[j][i] = epsilon[i][j];
   sigma[j][i] = sigma[i][j];
-  zeta[j][i] = zeta[i][j];
+  eta[j][i] = eta[i][j];
   mu[j][i] = mu[i][j];
   beta[j][i] = beta[i][j];
   osmotic_pressure[j][i] = osmotic_pressure[i][j];
@@ -333,7 +332,7 @@ void PairYLZ::write_restart(FILE *fp)
         fwrite(&epsilon[i][j], sizeof(double), 1, fp);
         fwrite(&sigma[i][j], sizeof(double), 1, fp);
         fwrite(&cut[i][j], sizeof(double), 1, fp);
-        fwrite(&zeta[i][j], sizeof(double), 1, fp);
+        fwrite(&eta[i][j], sizeof(double), 1, fp);
         fwrite(&mu[i][j], sizeof(double), 1, fp);
         fwrite(&beta[i][j], sizeof(double), 1, fp);
         fwrite(&osmotic_pressure[i][j], sizeof(double), 1, fp);
@@ -360,7 +359,7 @@ void PairYLZ::read_restart(FILE *fp)
           utils::sfread(FLERR, &epsilon[i][j], sizeof(double), 1, fp, nullptr, error);
           utils::sfread(FLERR, &sigma[i][j], sizeof(double), 1, fp, nullptr, error);
           utils::sfread(FLERR, &cut[i][j], sizeof(double), 1, fp, nullptr, error);
-          utils::sfread(FLERR, &zeta[i][j], sizeof(double), 1, fp, nullptr, error);
+          utils::sfread(FLERR, &eta[i][j], sizeof(double), 1, fp, nullptr, error);
           utils::sfread(FLERR, &mu[i][j], sizeof(double), 1, fp, nullptr, error);
           utils::sfread(FLERR, &beta[i][j], sizeof(double), 1, fp, nullptr, error);
           utils::sfread(FLERR, &osmotic_pressure[i][j], sizeof(double), 1, fp, nullptr, error);
@@ -369,7 +368,7 @@ void PairYLZ::read_restart(FILE *fp)
         MPI_Bcast(&epsilon[i][j], 1, MPI_DOUBLE, 0, world);
         MPI_Bcast(&sigma[i][j], 1, MPI_DOUBLE, 0, world);
         MPI_Bcast(&cut[i][j], 1, MPI_DOUBLE, 0, world);
-        MPI_Bcast(&zeta[i][j], 1, MPI_DOUBLE, 0, world);
+        MPI_Bcast(&eta[i][j], 1, MPI_DOUBLE, 0, world);
         MPI_Bcast(&mu[i][j], 1, MPI_DOUBLE, 0, world);
         MPI_Bcast(&beta[i][j], 1, MPI_DOUBLE, 0, world);
         MPI_Bcast(&osmotic_pressure[i][j], 1, MPI_DOUBLE, 0, world);
@@ -414,7 +413,7 @@ void PairYLZ::read_restart_settings(FILE *fp)
 void PairYLZ::write_data(FILE *fp)
 {
   for (int i = 1; i <= atom->ntypes; i++)
-    fprintf(fp, "%d %g %g %g %g %g %g %g\n", i, epsilon[i][i], sigma[i][i], cut[i][i], zeta[i][i],
+    fprintf(fp, "%d %g %g %g %g %g %g %g\n", i, epsilon[i][i], sigma[i][i], cut[i][i], eta[i][i],
             mu[i][i], beta[i][i], osmotic_pressure[i][i]);
 }
 
@@ -427,7 +426,7 @@ void PairYLZ::write_data_all(FILE *fp)
   for (int i = 1; i <= atom->ntypes; i++)
     for (int j = i; j <= atom->ntypes; j++)
       fprintf(fp, "%d %d %g %g %g %g %g %g %g\n", i, j, epsilon[i][j], sigma[i][j], cut[i][j],
-              zeta[i][j], mu[i][j], beta[i][j], osmotic_pressure[i][j]);
+              eta[i][j], mu[i][j], beta[i][j], osmotic_pressure[i][j]);
 }
 
 /* ----------------------------------------------------------------------
@@ -455,7 +454,7 @@ double PairYLZ::ylz_analytic(const int i, const int j, double a1[3][3], double a
   const double energy_well = epsilon[type[i]][type[j]];
   const double rmin = MY_TWOBYSIXTH * sigma[type[i]][type[j]];
   const double rcut = cut[type[i]][type[j]];
-  const double zt = zeta[type[i]][type[j]];
+  const double zt = eta[type[i]][type[j]];
   const double muu = mu[type[i]][type[j]];
   const double sint = beta[type[i]][type[j]];
 
