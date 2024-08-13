@@ -509,8 +509,8 @@ double PairYLZ::ylz_analytic(const int i, const int j, double a1[3][3], double a
   if (r < ddd) {
 
     t = rmin / r;
-    for (int k = 1; k <= zt - 1; k++) t1 *= t_zt;    // get t^zt
-    for (int k = 1; k <= 2zt - 1; k++) t1 *= t_2zt;    // get t^2zt
+    for (int k = 1; k <= zt - 1; k++) t *= t_zt;    // get t^zt
+    for (int k = 1; k <= 2*zt - 1; k++) t *= t_2zt;    // get t^2zt
     uu = (t_2zt - 2.0 * t_zt) * energy_well;
 
     U = uu + phi;
@@ -521,8 +521,8 @@ double PairYLZ::ylz_analytic(const int i, const int j, double a1[3][3], double a
 
     // computing u(ddd), which is a constant
     t = rmin / ddd;
-    for (int k = 1; k <= zt - 1; k++) t1 *= t_zt;    // get t^zt
-    for (int k = 1; k <= 2zt - 1; k++) t1 *= t_2zt;    // get t^2zt
+    for (int k = 1; k <= zt - 1; k++) t *= t_zt;    // get t^zt
+    for (int k = 1; k <= 2*zt - 1; k++) t *= t_2zt;    // get t^2zt
     u_d = (t_2zt - 2.0 * t_zt) * energy_well;
 
     double temp_var_110 = (u_d + phi) / (rcut - ddd) ;
