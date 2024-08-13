@@ -45,7 +45,7 @@ class PairYLZ : public Pair {
  
  protected:
   double cut_global;
-  double **epsilon, **sigma, **cut, **eta, **mu, **beta, **osmotic_pressure;
+  double **epsilon, **sigma, **cut, **eta, **mu, **beta, **osmotic_pressure, **ddd;
 
   class AtomVecEllipsoid *avec;
 
