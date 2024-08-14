@@ -422,7 +422,7 @@ void PairYLZ::read_restart_settings(FILE *fp)
 void PairYLZ::write_data(FILE *fp)
 {
   for (int i = 1; i <= atom->ntypes; i++)
-    fprintf(fp, "%d %g %g %g %g %g %g %g\n", i, epsilon[i][i], sigma[i][i], cut[i][i], eta[i][i], 
+    fprintf(fp, "%d %g %g %g %g %g %g %g %g\n", i, epsilon[i][i], sigma[i][i], cut[i][i], eta[i][i], 
             ddd[i][i], mu[i][i], beta[i][i], osmotic_pressure[i][i]);
 }
 
@@ -434,7 +434,7 @@ void PairYLZ::write_data_all(FILE *fp)
 {
   for (int i = 1; i <= atom->ntypes; i++)
     for (int j = i; j <= atom->ntypes; j++)
-      fprintf(fp, "%d %d %g %g %g %g %g %g %g\n", i, j, epsilon[i][j], sigma[i][j], cut[i][j],
+      fprintf(fp, "%d %d %g %g %g %g %g %g %g %g\n", i, j, epsilon[i][j], sigma[i][j], cut[i][j],
               eta[i][j], ddd[i][j], mu[i][j], beta[i][j], osmotic_pressure[i][j]);
 }
 
@@ -502,15 +502,13 @@ double PairYLZ::ylz_analytic(const int i, const int j, double a1[3][3], double a
   dphi_dnj1[2] = ne_epsi_mu * (ni1[2] + r12hat[2] * sint_minus_ni1rhat);
 
 
-  const double ddd = 1.25*rmin;   //定义成可输入参数
   double u_d, uu;
-
 
   if (r < ddd) {
 
     t = rmin / r;
     for (int k = 1; k <= zt - 1; k++) t *= t_zt;    // get t^zt
-    for (int k = 1; k <= 2*zt - 1; k++) t *= t_2zt;    // get t^2zt
+    t *= t_2zt;    // get t^2zt
     uu = (t_2zt - 2.0 * t_zt) * energy_well;
 
     U = uu + phi;
@@ -522,7 +520,7 @@ double PairYLZ::ylz_analytic(const int i, const int j, double a1[3][3], double a
     // computing u(ddd), which is a constant
     t = rmin / ddd;
     for (int k = 1; k <= zt - 1; k++) t *= t_zt;    // get t^zt
-    for (int k = 1; k <= 2*zt - 1; k++) t *= t_2zt;    // get t^2zt
+    t_zt*= t_2zt;    // get t^2zt
     u_d = (t_2zt - 2.0 * t_zt) * energy_well;
 
     double temp_var_110 = (u_d + phi) / (rcut - ddd) ;
