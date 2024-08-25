@@ -459,11 +459,11 @@ double PairYLZ::ylz_analytic(const int i, const int j, double a1[3][3], double a
 
   double ni1[3], nj1[3], dphi_drhat[3], dUdrhat[3], dUdni1[3], dUdnj1[3];
   double dphi_dni1[3], dphi_dnj1[3];
-  double t,t_zt,t_2zt, cos_t, U, uR, uA, dUdr, dUdphi;
+  double t,t_et,t_2et, cos_t, U, uR, uA, dUdr, dUdphi;
   const double energy_well = epsilon[type[i]][type[j]];
   const double rmin = MY_TWOBYSIXTH * sigma[type[i]][type[j]];
   const double rcut = cut[type[i]][type[j]];
-  const int zt = eta[type[i]][type[j]];
+  const int et = eta[type[i]][type[j]];
   const double d = ddd[type[i]][type[j]];
   const double muu = mu[type[i]][type[j]];
   const double sint = beta[type[i]][type[j]];
@@ -507,21 +507,21 @@ double PairYLZ::ylz_analytic(const int i, const int j, double a1[3][3], double a
 
   if (r < d) {
     t = rmin / r;
-    t_zt = 1;
-    for (int k = 0; k <= zt - 1; k++) t_zt *= t;    // get t^zt
-    t *= t_2zt;    // get t^2zt
-    uu = (t_2zt - 2.0 * t_zt) * energy_well;
+    t_et = 1;
+    for (int k = 0; k <= et - 1; k++) t_et *= t;    // get t^et
+    t_2et= t_et * t_et;    // get t^2et
+    uu = (t_2et - 2.0 * t_et) * energy_well;
     U = uu + phi;
-    dUdr = 2.0 * zt * (t_zt - t_2zt) / r * energy_well;
+    dUdr = 2.0 * et * (t_et - t_2et) / r * energy_well;
     dUdphi = 1.0; } 
 
   else {
     // computing u(d), which is a constant
     t = rmin / d;
-    t_zt = 1;
-    for (int k = 0; k <= zt - 1; k++) t_zt *= t;    // get t^zt
-    t_2zt= t_zt * t_zt;    // get t^2zt
-    u_d = (t_2zt - 2.0 * t_zt) * energy_well;
+    t_et = 1;
+    for (int k = 0; k <= et - 1; k++) t_et *= t;    // get t^et
+    t_2et= t_et * t_et;    // get t^2et
+    u_d = (t_2et - 2.0 * t_et) * energy_well;
 
     double temp_var_110 = (u_d + phi) / (rcut - d) ;
     U = (rcut - r) * temp_var_110;
