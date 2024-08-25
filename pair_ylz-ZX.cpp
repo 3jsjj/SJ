@@ -463,7 +463,8 @@ double PairYLZ::ylz_analytic(const int i, const int j, double a1[3][3], double a
   const double energy_well = epsilon[type[i]][type[j]];
   const double rmin = MY_TWOBYSIXTH * sigma[type[i]][type[j]];
   const double rcut = cut[type[i]][type[j]];
-  const int zt = eta[type[i]][type[j]]; 
+  const int zt = eta[type[i]][type[j]];
+  const double d = ddd[type[i]][type[j]];
   const double muu = mu[type[i]][type[j]];
   const double sint = beta[type[i]][type[j]];
 
@@ -504,32 +505,30 @@ double PairYLZ::ylz_analytic(const int i, const int j, double a1[3][3], double a
 
   double u_d, uu;
 
-  if (r < ddd) {
+  if (r < d) {
 
     t = rmin / r;
     for (int k = 1; k <= zt - 1; k++) t *= t_zt;    // get t^zt
     t *= t_2zt;    // get t^2zt
     uu = (t_2zt - 2.0 * t_zt) * energy_well;
-
     U = uu + phi;
-
-    dUdr = 4.0 * (t_zt - t_2zt) / r * energy_well;
+    dUdr = 2.0 * zt * (t_zt - t_2zt) / r * energy_well;
     dUdphi = 1.0; } 
   else {
 
-    // computing u(ddd), which is a constant
-    t = rmin / ddd;
+    // computing u(d), which is a constant
+    t = rmin / d;
     for (int k = 1; k <= zt - 1; k++) t *= t_zt;    // get t^zt
     t_zt*= t_2zt;    // get t^2zt
     u_d = (t_2zt - 2.0 * t_zt) * energy_well;
 
-    double temp_var_110 = (u_d + phi) / (rcut - ddd) ;
+    double temp_var_110 = (u_d + phi) / (rcut - d) ;
 
     U = (rcut - r) * temp_var_110;
 
     dUdr = - temp_var_110;
 
-    dUdphi = (rcut - r) / (rcut - ddd) ;
+    dUdphi = (rcut - r) / (rcut - d) ;
   }
 
   dUdrhat[0] = dUdphi * dphi_drhat[0];
