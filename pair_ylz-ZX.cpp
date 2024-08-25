@@ -377,7 +377,7 @@ void PairYLZ::read_restart(FILE *fp)
         MPI_Bcast(&sigma[i][j], 1, MPI_DOUBLE, 0, world);
         MPI_Bcast(&cut[i][j], 1, MPI_DOUBLE, 0, world);
         MPI_Bcast(&eta[i][j], 1, MPI_INT, 0, world);
-        MPI_Bcast(&eta[i][j], 1, MPI_DOUBLE, 0, world);
+        MPI_Bcast(&ddd[i][j], 1, MPI_DOUBLE, 0, world);
         MPI_Bcast(&mu[i][j], 1, MPI_DOUBLE, 0, world);
         MPI_Bcast(&beta[i][j], 1, MPI_DOUBLE, 0, world);
         MPI_Bcast(&osmotic_pressure[i][j], 1, MPI_DOUBLE, 0, world);
@@ -506,28 +506,26 @@ double PairYLZ::ylz_analytic(const int i, const int j, double a1[3][3], double a
   double u_d, uu;
 
   if (r < d) {
-
     t = rmin / r;
-    for (int k = 1; k <= zt - 1; k++) t *= t_zt;    // get t^zt
+    t_zt = 1;
+    for (int k = 0; k <= zt - 1; k++) t_zt *= t;    // get t^zt
     t *= t_2zt;    // get t^2zt
     uu = (t_2zt - 2.0 * t_zt) * energy_well;
     U = uu + phi;
     dUdr = 2.0 * zt * (t_zt - t_2zt) / r * energy_well;
     dUdphi = 1.0; } 
-  else {
 
+  else {
     // computing u(d), which is a constant
     t = rmin / d;
-    for (int k = 1; k <= zt - 1; k++) t *= t_zt;    // get t^zt
-    t_zt*= t_2zt;    // get t^2zt
+    t_zt = 1;
+    for (int k = 0; k <= zt - 1; k++) t_zt *= t;    // get t^zt
+    t_2zt= t_zt * t_zt;    // get t^2zt
     u_d = (t_2zt - 2.0 * t_zt) * energy_well;
 
     double temp_var_110 = (u_d + phi) / (rcut - d) ;
-
     U = (rcut - r) * temp_var_110;
-
     dUdr = - temp_var_110;
-
     dUdphi = (rcut - r) / (rcut - d) ;
   }
 
