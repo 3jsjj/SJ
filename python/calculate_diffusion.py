@@ -2,7 +2,7 @@ import numpy as np
 
 def read_positions(file_path):
     """
-    从文件中读取粒子位置数据
+    从文件中读取粒子位置数据，从一个数据文件中读取粒子的位置信息，并将其以 numpy 数组的形式返回
     """
     with open(file_path, 'r') as file:
         lines = file.readlines()
