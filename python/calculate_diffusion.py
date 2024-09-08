@@ -1,9 +1,8 @@
 import numpy as np
+import argparse
 
 def read_positions(file_path):
-    """
-    从文件中读取粒子位置数据，并将其以 numpy 数组的形式返回。
-    """
+    # 读取粒子位置数据的函数（与原代码相同）
     positions = []
     with open(file_path, 'r') as file:
         current_positions = []
@@ -27,40 +26,38 @@ def read_positions(file_path):
             positions.append(current_positions)  # 保存最后一个时间步的数据
     return np.array(positions)
 
-
 def calculate_msd(positions):
-    """
-    计算均方位移（MSD）。
-    """
+    # 计算均方位移的函数（与原代码相同）
     displacements = positions - positions[0]  # 相对初始位置的位移
     squared_displacements = np.sum(displacements**2, axis=2)  # 每个粒子的平方位移
     msd = np.mean(squared_displacements, axis=1)  # 对所有粒子求平均
     return msd
 
-
 def calculate_diffusion_coefficient(msd, time_step, step_interval):
-    """
-    使用线性拟合计算扩散系数，避免仅依赖最后一步的 MSD。
-    """
+    # 计算扩散系数的函数（与原代码相同）
     time = np.arange(0, len(msd)) * time_step * step_interval  # 生成对应的时间点
-    # 线性拟合 MSD 和时间，斜率为 MSD 的增长率
     slope, _ = np.polyfit(time, msd, 1)
     diffusion_coefficient = slope / 4  # 扩散系数为 MSD 的斜率除以 4
     return diffusion_coefficient
 
+if __name__ == "__main__":
+    # 使用 argparse 模块接受命令行参数
+    parser = argparse.ArgumentParser(description='Calculate diffusion coefficient from particle positions.')
+    parser.add_argument('--file', type=str, required=True, help='Path to the dump file containing particle positions')
+    parser.add_argument('--time_step', type=int, default=500, help='Time step interval between outputs')
+    parser.add_argument('--step_interval', type=float, default=0.001, help='Time interval for each step')
 
-# 设置文件路径和时间步长信息
-file_path = '/mnt/data/custom_dump(2).txt'  # 文件路径
-step_interval = 0.001  # 每个时间步的时间间隔
-time_step = 500  # 每500步输出一次
+    args = parser.parse_args()
 
-# 读取位置数据
-positions = read_positions(file_path)
+    # 读取位置数据
+    positions = read_positions(args.file)
 
-# 计算均方位移（MSD）
-msd = calculate_msd(positions)
+    # 计算均方位移（MSD）
+    msd = calculate_msd(positions)
 
-# 计算扩散系数
-diffusion_coefficient = calculate_diffusion_coefficient(msd, time_step, step_interval)
+    # 计算扩散系数
+    diffusion_coefficient = calculate_diffusion_coefficient(msd, args.time_step, args.step_interval)
 
-print(f"Diffusion Coefficient: {diffusion_coefficient:.6f} units^2/time")
+    # 输出扩散系数
+    print(f"{diffusion_coefficient:.6f}")
+
