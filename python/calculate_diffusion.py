@@ -1,5 +1,6 @@
 import numpy as np
 import argparse
+import matplotlib.pyplot as plt
 
 def read_positions(file_path):
     # 读取粒子位置数据的函数（与原代码相同）
@@ -35,10 +36,26 @@ def calculate_msd(positions):
 
 def calculate_diffusion_coefficient(msd, time_step, step_interval):
     # 计算扩散系数的函数（与原代码相同）
+
     time = np.arange(0, len(msd)) * time_step * step_interval  # 生成对应的时间点
     slope, _ = np.polyfit(time, msd, 1)
     diffusion_coefficient = slope / 4  # 扩散系数为 MSD 的斜率除以 4
     return diffusion_coefficient
+
+# 使用之前定义的 calculate_msd 和 read_positions 函数
+def plot_msd_vs_time(positions, time_step, step_interval):
+
+    # 绘制 MSD 随时间的变化图
+    plt.figure(figsize=(8, 6))
+    plt.plot(time, msd, 'o-', label='MSD vs Time')
+    plt.xlabel('Time')
+    plt.ylabel('Mean Squared Displacement (MSD)')
+    plt.title('MSD vs Time')
+    plt.grid(True)
+    plt.legend()
+    plt.show()
+
+plot_msd_vs_time(positions, time_step, step_interval)
 
 if __name__ == "__main__":
     # 使用 argparse 模块接受命令行参数
